@@ -98,7 +98,7 @@ function level_low() {
         fi
     fi
 
-    RESTRICT_VAR_LOG="$(sed -En '/^\s*UUID.*?\/var\/log /p' /test/fstab | awk -F' ' '{print $4}')"
+    RESTRICT_VAR_LOG="$(sed -En '/^\s*UUID.*?\/var\/log /p' /etc/fstab | awk -F' ' '{print $4}')"
     if [[ -z ${RESTRICT_VAR_LOG} ]]; then
         echo -e "${RED}[!]${NC} /var/log not restricted"
     else
@@ -134,6 +134,47 @@ function level_low() {
             fi
 
             if [[ ${RESTRICT_VAR_LOG_ARG_NODEV} != "1" ]]; then
+                echo -e "  ➥ ${RED}nodev${NC} missing"
+            fi
+        fi
+    fi
+
+    RESTRICT_VAR_LOG_AUDIT="$(sed -En '/^\s*UUID.*?\/var\/log\/audit /p' /etc/fstab | awk -F' ' '{print $4}')"
+    if [[ -z ${RESTRICT_VAR_LOG_AUDIT} ]]; then
+        echo -e "${RED}[!]${NC} /var/log/audit not restricted"
+    else
+        RESTRICT_VAR_LOG_AUDIT_NUMBER="$(echo ${RESTRICT_VAR_LOG_AUDIT} | sed 's/,/\n/g' | wc -l)"
+        for i in $(seq 1 ${RESTRICT_VAR_LOG_AUDIT_NUMBER}); do
+            RESTRICT_VAR_LOG_AUDIT_ARG_CURRENT="$(echo ${RESTRICT_VAR_LOG_AUDIT} | sed 's/,/\n/g' | sed -n ${i}p)"
+            if [[ ${RESTRICT_VAR_LOG_AUDIT_ARG_CURRENT} == "defaults" ]]; then
+                RESTRICT_VAR_LOG_AUDIT_ARG_DEFAULTS="1"
+            elif [[ ${RESTRICT_VAR_LOG_AUDIT_ARG_CURRENT} == "nosuid" ]]; then
+                RESTRICT_VAR_LOG_AUDIT_ARG_NOSUID="1"
+            elif [[ ${RESTRICT_VAR_LOG_AUDIT_ARG_CURRENT} == "noexec" ]]; then
+                RESTRICT_VAR_LOG_AUDIT_ARG_NOEXEC="1"
+            elif [[ ${RESTRICT_VAR_LOG_AUDIT_ARG_CURRENT} == "nodev" ]]; then
+                RESTRICT_VAR_LOG_AUDIT_ARG_NODEV="1"
+            fi
+        done
+
+        if [[ ${RESTRICT_VAR_LOG_AUDIT_ARG_DEFAULTS} == "1" && ${RESTRICT_VAR_LOG_AUDIT_ARG_NOSUID} == "1" && ${RESTRICT_VAR_LOG_AUDIT_ARG_NOEXEC} == "1" && ${RESTRICT_VAR_LOG_AUDIT_ARG_NODEV} == "1" ]]; then
+            echo -e "${GREEN}[+]${NC} /var/log/audit correctly restricted"
+            CONFORMITY="$(expr ${CONFORMITY}+1)"
+        else
+            echo -e "${RED}/var/log/audit${NC}"
+            if [[ ${RESTRICT_VAR_LOG_AUDIT_ARG_DEFAULTS} != "1" ]]; then
+                echo -e "  ➥ ${RED}default${NC} missing"
+            fi
+            
+            if [[ ${RESTRICT_VAR_LOG_AUDIT_ARG_NOSUID} != "1" ]]; then
+                echo -e "  ➥ ${RED}nosuid${NC} missing"
+            fi
+            
+            if [[ ${RESTRICT_VAR_LOG_AUDIT_ARG_NOEXEC} != "1" ]]; then
+                echo -e "  ➥ ${RED}noexec${NC} missing"
+            fi
+
+            if [[ ${RESTRICT_VAR_LOG_AUDIT_ARG_NODEV} != "1" ]]; then
                 echo -e "  ➥ ${RED}nodev${NC} missing"
             fi
         fi
