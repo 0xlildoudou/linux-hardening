@@ -34,7 +34,7 @@ function level_low() {
         CONFORMITY="$(expr ${CONFORMITY}+1)"
     fi
 
-    RESTRICT_USR="$(sed -En '/^\s*UUID.*?\/usr/p' .test/fstab | awk -F' ' '{print $4}')"
+    RESTRICT_USR="$(sed -En '/^\s*UUID.*?\/usr/p' /etc/fstab | awk -F' ' '{print $4}')"
     if [[ -z ${RESTRICT_USR} ]]; then
         echo -e "${RED}[!]${NC} /usr not restricted"
     else
@@ -65,6 +65,35 @@ function level_low() {
             
             if [[ ${RESTRICT_USR_ARG_RO} != "1" ]]; then
                 echo -e "  ➥ ${RED}ro${NC} missing"
+            fi
+        fi
+    fi
+
+    RESTRICT_VAR="$(sed -En '/^\s*UUID.*?\/var/p' .test/fstab | awk -F' ' '{print $4}')"
+    if [[ -z ${RESTRICT_VAR} ]]; then
+        echo -e "${RED}[!]${NC} /var not restricted"
+    else
+        RESTRICT_VAR_NUMBER="$(echo ${RESTRICT_VAR} | sed 's/,/\n/g' | wc -l)"
+        for i in $(seq 1 ${RESTRICT_VAR_NUMBER}); do
+            RESTRICT_VAR_ARG_CURRENT="$(echo ${RESTRICT_VAR} | sed 's/,/\n/g' | sed -n ${i}p)"
+            if [[ ${RESTRICT_VAR_ARG_CURRENT} == "defaults" ]]; then
+                RESTRICT_VAR_ARG_DEFAULTS="1"
+            elif [[ ${RESTRICT_VAR_ARG_CURRENT} == "nosuid" ]]; then
+                RESTRICT_VAR_ARG_NOSUID="1"
+            fi
+        done
+
+        if [[ ${RESTRICT_VAR_ARG_DEFAULTS} == "1" && ${RESTRICT_VAR_ARG_NOSUID} == "1" ]]; then
+            echo -e "${GREEN}[+]${NC} /usr correctly restricted"
+            CONFORMITY="$(expr ${CONFORMITY}+1)"
+        else
+        echo -e "${RED}/var${NC}"
+            if [[ ${RESTRICT_VAR_ARG_DEFAULTS} != "1" ]]; then
+                echo -e "  ➥ ${RED}default${NC} missing"
+            fi
+            
+            if [[ ${RESTRICT_VAR_ARG_NOSUID} != "1" ]]; then
+                echo -e "  ➥ ${RED}nosuid${NC} missing"
             fi
         fi
     fi
