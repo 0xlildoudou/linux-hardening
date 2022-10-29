@@ -179,6 +179,35 @@ function level_low() {
             fi
         fi
     fi
+
+    RESTRICT_PROC="$(sed -En '/^\s*UUID.*?\/proc /p' /etc/fstab | awk -F' ' '{print $4}')"
+    if [[ -z ${RESTRICT_PROC} ]]; then
+        echo -e "${RED}[!]${NC} /proc not restricted"
+    else
+        RESTRICT_PROC_NUMBER="$(echo ${RESTRICT_PROC} | sed 's/,/\n/g' | wc -l)"
+        for i in $(seq 1 ${RESTRICT_PROC_NUMBER}); do
+            RESTRICT_PROC_ARG_CURRENT="$(echo ${RESTRICT_VAR} | sed 's/,/\n/g' | sed -n ${i}p)"
+            if [[ ${RESTRICT_PROC_ARG_CURRENT} == "defaults" ]]; then
+                RESTRICT_PROC_ARG_DEFAULTS="1"
+            elif [[ ${RESTRICT_PROC_ARG_CURRENT} == "hidepid=2" ]]; then
+                RESTRICT_PROC_ARG_HIDEPID="1"
+            fi
+        done
+
+        if [[ ${RESTRICT_PROC_ARG_DEFAULTS} == "1" && ${RESTRICT_PROC_ARG_HIDEPID} == "1" ]]; then
+            echo -e "${GREEN}[+]${NC} /proc correctly restricted"
+            CONFORMITY="$(expr ${CONFORMITY}+1)"
+        else
+            echo -e "${RED}/proc${NC}"
+            if [[ ${RESTRICT_PROC_ARG_DEFAULTS} != "1" ]]; then
+                echo -e "  ➥ ${RED}default${NC} missing"
+            fi
+            
+            if [[ ${RESTRICT_PROC_ARG_HIDEPID} != "1" ]]; then
+                echo -e "  ➥ ${RED}hidepid=2${NC} missing"
+            fi
+        fi
+    fi
 }
 
 function main() {
