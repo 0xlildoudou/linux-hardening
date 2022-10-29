@@ -56,11 +56,15 @@ function level_low() {
         else
         echo -e "${RED}/usr${NC}"
             if [[ ${RESTRICT_USR_ARG_DEFAULTS} != "1" ]]; then
-                echo -e "➥ ${RED}default${NC} missing"
-            elif [[ ${RESTRICT_USR_ARG_NODEV} != "1" ]]; then
-                echo -e "➥ ${RED}nodev${NC} missing"
-            elif [[ ${RESTRICT_USR_ARG_RO} != "1" ]]; then
-                echo -e "➥ ${RED}ro${NC} missing"
+                echo -e "  ➥ ${RED}default${NC} missing"
+            fi
+            
+            if [[ ${RESTRICT_USR_ARG_NODEV} != "1" ]]; then
+                echo -e "  ➥ ${RED}nodev${NC} missing"
+            fi
+            
+            if [[ ${RESTRICT_USR_ARG_RO} != "1" ]]; then
+                echo -e "  ➥ ${RED}ro${NC} missing"
             fi
         fi
     fi
