@@ -54,7 +54,7 @@ function level_low() {
             echo -e "${GREEN}[+]${NC} /usr correctly restricted"
             CONFORMITY="$(expr ${CONFORMITY}+1)"
         else
-        echo -e "${RED}/usr${NC}"
+            echo -e "${RED}/usr${NC}"
             if [[ ${RESTRICT_USR_ARG_DEFAULTS} != "1" ]]; then
                 echo -e "  ➥ ${RED}default${NC} missing"
             fi
@@ -69,7 +69,7 @@ function level_low() {
         fi
     fi
 
-    RESTRICT_VAR="$(sed -En '/^\s*UUID.*?\/var/p' .test/fstab | awk -F' ' '{print $4}')"
+    RESTRICT_VAR="$(sed -En '/^\s*UUID.*?\/var/p' /etc/fstab | awk -F' ' '{print $4}')"
     if [[ -z ${RESTRICT_VAR} ]]; then
         echo -e "${RED}[!]${NC} /var not restricted"
     else
@@ -84,16 +84,57 @@ function level_low() {
         done
 
         if [[ ${RESTRICT_VAR_ARG_DEFAULTS} == "1" && ${RESTRICT_VAR_ARG_NOSUID} == "1" ]]; then
-            echo -e "${GREEN}[+]${NC} /usr correctly restricted"
+            echo -e "${GREEN}[+]${NC} /var correctly restricted"
             CONFORMITY="$(expr ${CONFORMITY}+1)"
         else
-        echo -e "${RED}/var${NC}"
+            echo -e "${RED}/var${NC}"
             if [[ ${RESTRICT_VAR_ARG_DEFAULTS} != "1" ]]; then
                 echo -e "  ➥ ${RED}default${NC} missing"
             fi
             
             if [[ ${RESTRICT_VAR_ARG_NOSUID} != "1" ]]; then
                 echo -e "  ➥ ${RED}nosuid${NC} missing"
+            fi
+        fi
+    fi
+
+    RESTRICT_VAR_LOG="$(sed -En '/^\s*UUID.*?\/var\/log /p' /test/fstab | awk -F' ' '{print $4}')"
+    if [[ -z ${RESTRICT_VAR_LOG} ]]; then
+        echo -e "${RED}[!]${NC} /var/log not restricted"
+    else
+        RESTRICT_VAR_LOG_NUMBER="$(echo ${RESTRICT_VAR_LOG} | sed 's/,/\n/g' | wc -l)"
+        for i in $(seq 1 ${RESTRICT_VAR_LOG_NUMBER}); do
+            RESTRICT_VAR_LOG_ARG_CURRENT="$(echo ${RESTRICT_VAR_LOG} | sed 's/,/\n/g' | sed -n ${i}p)"
+            if [[ ${RESTRICT_VAR_LOG_ARG_CURRENT} == "defaults" ]]; then
+                RESTRICT_VAR_LOG_ARG_DEFAULTS="1"
+            elif [[ ${RESTRICT_VAR_LOG_ARG_CURRENT} == "nosuid" ]]; then
+                RESTRICT_VAR_LOG_ARG_NOSUID="1"
+            elif [[ ${RESTRICT_VAR_LOG_ARG_CURRENT} == "noexec" ]]; then
+                RESTRICT_VAR_LOG_ARG_NOEXEC="1"
+            elif [[ ${RESTRICT_VAR_LOG_ARG_CURRENT} == "nodev" ]]; then
+                RESTRICT_VAR_LOG_ARG_NODEV="1"
+            fi
+        done
+
+        if [[ ${RESTRICT_VAR_LOG_ARG_DEFAULTS} == "1" && ${RESTRICT_VAR_LOG_ARG_NOSUID} == "1" && ${RESTRICT_VAR_LOG_ARG_NOEXEC} == "1" && ${RESTRICT_VAR_LOG_ARG_NODEV} == "1" ]]; then
+            echo -e "${GREEN}[+]${NC} /var/log correctly restricted"
+            CONFORMITY="$(expr ${CONFORMITY}+1)"
+        else
+            echo -e "${RED}/var/log${NC}"
+            if [[ ${RESTRICT_VAR_LOG_ARG_DEFAULTS} != "1" ]]; then
+                echo -e "  ➥ ${RED}default${NC} missing"
+            fi
+            
+            if [[ ${RESTRICT_VAR_LOG_ARG_NOSUID} != "1" ]]; then
+                echo -e "  ➥ ${RED}nosuid${NC} missing"
+            fi
+            
+            if [[ ${RESTRICT_VAR_LOG_ARG_NOEXEC} != "1" ]]; then
+                echo -e "  ➥ ${RED}noexec${NC} missing"
+            fi
+
+            if [[ ${RESTRICT_VAR_LOG_ARG_NODEV} != "1" ]]; then
+                echo -e "  ➥ ${RED}nodev${NC} missing"
             fi
         fi
     fi
