@@ -208,6 +208,71 @@ function level_low() {
             fi
         fi
     fi
+
+    RESTRICT_SHM="$(sed -En '/^\s*tmpfs.*?\/dev\/shm /p' /etc/fstab | awk -F' ' '{print $4}')"
+    if [[ -z ${RESTRICT_SHM}  ]]; then
+        echo -e "${RED}[!]${NC} /dev/shm not restricted"
+    else
+        RESTRICT_SHM_NUMBER="$(echo ${RESTRICT_SHM} | sed 's/,/\n/g' | wc -l)"
+        for i in $(seq 1 ${RESTRICT_SHM_NUMBER}); do
+            RESTRICT_SHM_ARG_CURRENT="$(echo ${RESTRICT_SHM} | sed 's/,/\n/g' | sed -n ${i}p)"
+            if [[ ${RESTRICT_SHM_ARG_CURRENT} == "rw" ]]; then
+                RESTRICT_SHM_ARG_RW="1"
+            elif [[ ${RESTRICT_SHM_ARG_CURRENT} == "nodev" ]]; then
+                RESTRICT_SHM_ARG_NODEV="1"
+            elif [[ ${RESTRICT_SHM_ARG_CURRENT} == "nosuid" ]]; then
+                RESTRICT_SHM_ARG_NOSUID="1"
+            elif [[ ${RESTRICT_SHM_ARG_CURRENT} == "noexec" ]]; then
+                RESTRICT_SHM_ARG_NOEXEC="1"
+            elif [[ ${RESTRICT_SHM_ARG_CURRENT} == "size=1024M" ]]; then
+                RESTRICT_SHM_ARG_SIZE="1"
+            elif [[ ${RESTRICT_SHM_ARG_CURRENT} == "mode=1770" ]]; then
+                RESTRICT_SHM_ARG_MODE="1"
+            elif [[ ${RESTRICT_SHM_ARG_CURRENT} == "uid=root" ]]; then
+                RESTRICT_SHM_ARG_UID="1"
+            elif [[ ${RESTRICT_SHM_ARG_CURRENT} == "gid=shm" ]]; then
+                RESTRICT_SHM_ARG_GID="1"  
+            fi
+        done
+
+        if [[ ${RESTRICT_SHM_ARG_RW} == "1" && ${RESTRICT_SHM_ARG_NODEV} == "1" && ${RESTRICT_SHM_ARG_NOSUID} == "1" && ${RESTRICT_SHM_ARG_NOEXEC} == "1" && ${RESTRICT_SHM_ARG_SIZE} == "1" && ${RESTRICT_SHM_ARG_MODE} == "1" && ${RESTRICT_SHM_ARG_UID} == "1" && ${RESTRICT_SHM_ARG_GID} == "1" ]]; then
+            echo -e "${GREEN}[+]${NC} /dev/shm correctly restricted"
+            CONFORMITY="$(expr ${CONFORMITY}+1)"
+        else
+            echo -e "${RED}/dev/shm${NC}"
+            if [[ ${RESTRICT_PROC_ARG_RW} != "1" ]]; then
+                echo -e "  ➥ ${RED}rw${NC} missing"
+            fi
+
+            if [[ ${RESTRICT_PROC_ARG_NODEV} != "1" ]]; then
+                echo -e "  ➥ ${RED}nodev${NC} missing"
+            fi
+
+            if [[ ${RESTRICT_PROC_ARG_NOSUID} != "1" ]]; then
+                echo -e "  ➥ ${RED}nosuid${NC} missing"
+            fi
+
+            if [[ ${RESTRICT_PROC_ARG_NOEXEC} != "1" ]]; then
+                echo -e "  ➥ ${RED}nosuid${NC} missing"
+            fi
+
+            if [[ ${RESTRICT_PROC_ARG_SIZE} != "1" ]]; then
+                echo -e "  ➥ ${RED}size=1024${NC} missing"
+            fi
+
+            if [[ ${RESTRICT_PROC_ARG_MODE} != "1" ]]; then
+                echo -e "  ➥ ${RED}mode=1770${NC} missing"
+            fi
+
+            if [[ ${RESTRICT_PROC_ARG_UID} != "1" ]]; then
+                echo -e "  ➥ ${RED}uid=root${NC} missing"
+            fi
+
+            if [[ ${RESTRICT_PROC_ARG_GID} != "1" ]]; then
+                echo -e "  ➥ ${RED}gid=shm${NC} missing"
+            fi
+        fi
+    fi
 }
 
 function main() {
