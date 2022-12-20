@@ -9,6 +9,12 @@ NC='\e[39m'
 
 CONFORMITY="0"
 
+function requirement_missing() {
+    if [[ $1 != "1" ]]; then
+        echo -e "  ➥ ${RED}$2${NC} missing"
+    fi
+}
+
 function level_low() {
     local BOOT_PARTITION="$(lsblk | sed -En '/.*?part\s*\/boot/p')"
     if [[ -z ${BOOT_PARTITION} ]]; then
@@ -34,7 +40,7 @@ function level_low() {
         CONFORMITY="$(expr ${CONFORMITY} + 1)"
     fi
 
-    RESTRICT_USR="$(sed -En '/^\s*UUID.*?\/usr/p' /etc/fstab | awk -F' ' '{print $4}')"
+    RESTRICT_USR="$(sed -En '/^\s*UUID.*?\/usr/p' .test/fstab | awk -F' ' '{print $4}')"
     if [[ -z ${RESTRICT_USR} ]]; then
         echo -e "${RED}[!]${NC} /usr not restricted"
     else
@@ -55,17 +61,12 @@ function level_low() {
             CONFORMITY="$(expr ${CONFORMITY} + 1)"
         else
             echo -e "${RED}/usr${NC}"
-            if [[ ${RESTRICT_USR_ARG_DEFAULTS} != "1" ]]; then
-                echo -e "  ➥ ${RED}default${NC} missing"
-            fi
+
+            requirement_missing "${RESTRICT_USR_ARG_DEFAULTS}" "default"
             
-            if [[ ${RESTRICT_USR_ARG_NODEV} != "1" ]]; then
-                echo -e "  ➥ ${RED}nodev${NC} missing"
-            fi
+            requirement_missing "${RESTRICT_USR_ARG_NODEV}" "nodev"
             
-            if [[ ${RESTRICT_USR_ARG_RO} != "1" ]]; then
-                echo -e "  ➥ ${RED}ro${NC} missing"
-            fi
+            requirement_missing "${RESTRICT_USR_ARG_RO}" "ro"
         fi
     fi
 
@@ -88,13 +89,10 @@ function level_low() {
             CONFORMITY="$(expr ${CONFORMITY} + 1)"
         else
             echo -e "${RED}/var${NC}"
-            if [[ ${RESTRICT_VAR_ARG_DEFAULTS} != "1" ]]; then
-                echo -e "  ➥ ${RED}default${NC} missing"
-            fi
             
-            if [[ ${RESTRICT_VAR_ARG_NOSUID} != "1" ]]; then
-                echo -e "  ➥ ${RED}nosuid${NC} missing"
-            fi
+            requirement_missing "${RESTRICT_VAR_ARG_DEFAULTS}" "default"
+            
+            requirement_missing "${RESTRICT_VAR_ARG_NOSUID}" "nosuid"
         fi
     fi
 
