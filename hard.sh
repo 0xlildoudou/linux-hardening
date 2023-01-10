@@ -54,9 +54,9 @@ function _conformity() {
 ###
 
 function separate_partitions() {
-    FOLDER="/$1"
-    FOLDER_SED="\/$1"
-    REQUIRED=$2
+    local FOLDER="/$1"
+    local FOLDER_SED="\/$1"
+    local REQUIRED=$2
     
     local BOOT_PARTITION="$(lsblk | sed -En "/.*?part\s*${FOLDER_SED}/p")"
     if [[ -z ${BOOT_PARTITION} ]]; then
@@ -68,15 +68,55 @@ function separate_partitions() {
     fi
 }
 
+function restrict_mount_options() {
+    local FOLDER="/$1"
+    local FOLDER_SED="\/$1"
+    local OPTIONS=($2)
+
+    local FSTAB_PATH=".test/fstab"
+
+    FSTAB_OPTION=$(sed -En "/^\s*UUID.*?$FOLDER_SED/p" ${FSTAB_PATH} | awk -F' ' '{print $4}')
+    if [[ -z ${FSTAB_OPTION} ]]; then
+        verbose_output "NOK" "${FOLDER} not restricted"
+        _conformity "0"
+    else
+        local FSTAB_LIST=($(echo ${FSTAB_OPTION} | sed 's/,/ /g'))
+        for option in ${OPTIONS[@]}; do
+            OPTIONS_OK="False"
+            for fstab_option in ${FSTAB_LIST[@]}; do
+                if [[ ${option} == ${fstab_option} ]]; then
+                    OPTIONS_OK="True"
+                fi
+            done
+
+            if [[ ${OPTIONS_OK} == "False" ]]; then
+                verbose_output "NOK" "${option} in ${FOLDER} missing"
+                _conformity "0"
+            else
+                verbose_output "OK" "${option} restrict ${FOLDER}"
+                _conformity "1"
+            fi
+        done
+    fi
+}
+
 ###
 # LEVELS
 ###
 
 function level_low() {
-    # /home separate partition
+    # separate partition
     separate_partitions 'boot' "yes"
     separate_partitions 'home' "yes"
     separate_partitions 'usr' "yes"
+
+    # Restrict mount option
+    restrict_mount_options "usr" "default nodev ro"
+    restrict_mount_options "var" "default nosuid"
+    #restrict_mount_options "var/log" "defaults nosuid noexec nodev"
+    #restrict_mount_options "var/log/audit" "defaults nosuid noexec nodev"
+    restrict_mount_options "proc" "defaults hidepid=2"
+
 }
 
 ###
