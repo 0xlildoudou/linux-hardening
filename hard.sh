@@ -69,8 +69,14 @@ function separate_partitions() {
 }
 
 function restrict_mount_options() {
+    # Multiple sub folder filter
+    if [[ *$1* == *"/"* ]]; then
+        local FOLDER_SED=$(sed 's/\//\\\//g' $1 2>/dev/null)
+    else
+        local FOLDER_SED="\/$1"
+    fi
+
     local FOLDER="/$1"
-    local FOLDER_SED="\/$1"
     local OPTIONS=($2)
 
     local FSTAB_PATH=".test/fstab"
@@ -113,8 +119,8 @@ function level_low() {
     # Restrict mount option
     restrict_mount_options "usr" "default nodev ro"
     restrict_mount_options "var" "default nosuid"
-    #restrict_mount_options "var/log" "defaults nosuid noexec nodev"
-    #restrict_mount_options "var/log/audit" "defaults nosuid noexec nodev"
+    restrict_mount_options "var/log" "defaults nosuid noexec nodev"
+    restrict_mount_options "var/log/audit" "defaults nosuid noexec nodev"
     restrict_mount_options "proc" "defaults hidepid=2"
 
 }
