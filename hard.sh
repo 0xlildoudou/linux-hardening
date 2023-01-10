@@ -79,13 +79,21 @@ function restrict_mount_options() {
     local FOLDER="/$1"
     local OPTIONS=($2)
 
-    local FSTAB_PATH=".test/fstab"
+    local FSTAB_PATH="/etc/fstab"
 
-    FSTAB_OPTION=$(sed -En "/^\s*UUID.*?$FOLDER_SED/p" ${FSTAB_PATH} | awk -F' ' '{print $4}')
-    if [[ -z ${FSTAB_OPTION} ]]; then
+    local MOUNT_POINT_SET="False"
+    local FSTAB_FOLDER=($(sed -En "/^\s*UUID.*?${FOLDER_SED}/p" ${FSTAB_PATH} | awk -F' ' '{print $2}'))
+    for mount_point in ${FSTAB_FOLDER[@]}; do
+        if [[ ${mount_point} == ${FOLDER} ]]; then
+            MOUNT_POINT_SET="True"
+        fi
+    done
+
+    if [[ -z ${FSTAB_FOLDER} || ${MOUNT_POINT_SET} == "False" ]]; then
         verbose_output "NOK" "${FOLDER} not restricted"
         _conformity "0"
     else
+        FSTAB_OPTION=$(sed -En "/^\s*UUID.*?$FOLDER_SED\s*/p" ${FSTAB_PATH} | awk -F' ' '{print $4}')
         local FSTAB_LIST=($(echo ${FSTAB_OPTION} | sed 's/,/ /g'))
         for option in ${OPTIONS[@]}; do
             OPTIONS_OK="False"
