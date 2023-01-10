@@ -16,17 +16,33 @@ function banner() {
 }
 
 function requirements() {
-    _packages_requirements=(sed awk wc)
+    _packages_requirements=(sed awk wc lsblk)
 
     for i in ${!_packages_requirements[@]}; do
         
         WHICH=$(which ${_packages_requirements[${i}]} 2>/dev/null)
         if [ $? != 0 ]; then
             echo "  package ${_packages_requirements[${i}]} missing"
+            exit 1 
         else
-            echo "  ${_packages_requirements[${i}]} : ok"
+            if [[ ${VERBOSE} == "True" ]]; then
+                echo "  ${_packages_requirements[${i}]} : ok"
+            fi
         fi
     done
+}
+
+function verbose_output() {
+    STATUS=$1
+    MESSAGE=$2
+
+    if [[ ${VERBOSE} == "True" ]]; then
+        if [[ ${STATUS} == "NOK" ]]; then
+            echo -e "${RED}[FAIL]${NC} ${MESSAGE}"
+        else
+            echo -e "${GREEN}[PASS]${NC} ${MESSAGE}"
+        fi
+    fi
 }
 
 ###
@@ -34,8 +50,15 @@ function requirements() {
 ###
 
 function separate_partitions() {
-    FOLDER=$1
+    FOLDER="$1"
+    FOLDER_SED="\/$1"
     REQUIRED=$2
+    local BOOT_PARTITION="$(lsblk | sed -En "/.*?part\s*${FOLDER_SED}/p")"
+    if [[ -z ${BOOT_PARTITION} ]]; then
+        verbose_output "NOK" "${FOLDER} not in a separate partition"
+    else
+        verbose_output "OK" "${FOLDER} is in a separate partition"
+    fi
 }
 
 ###
@@ -44,7 +67,7 @@ function separate_partitions() {
 
 function level_low() {
     # /home separate partition
-    separate_partitions "/home" "yes"
+    separate_partitions 'home' "yes"
 }
 
 ###
@@ -56,8 +79,8 @@ function main() {
 
     if [[ ${VERBOSE} == "True" ]]; then
         echo "system dependences : "
-        requirements
     fi
+    requirements
 
     # Conformity score init
     CONFORMITY=0
