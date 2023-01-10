@@ -30,7 +30,25 @@ function requirements() {
 }
 
 ###
-# start
+# SCANNERS
+###
+
+function separate_partitions() {
+    FOLDER=$1
+    REQUIRED=$2
+}
+
+###
+# LEVELS
+###
+
+function level_low() {
+    # /home separate partition
+    separate_partitions "/home" "yes"
+}
+
+###
+# START
 ###
 
 function main() {
@@ -43,6 +61,20 @@ function main() {
 
     # Conformity score init
     CONFORMITY=0
+
+    # Level selector
+    case ${LEVEL_SELECTED} in 
+        default)
+            level_low
+            ;;
+        low)
+            level_low
+            ;;
+        medium)
+            ;;
+        hard)
+            ;;
+    esac
 }
 
 
