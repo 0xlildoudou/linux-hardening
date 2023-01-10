@@ -45,19 +45,26 @@ function verbose_output() {
     fi
 }
 
+function _conformity() {
+    CONFORMITY=$(expr ${CONFORMITY} + $1)
+}
+
 ###
 # SCANNERS
 ###
 
 function separate_partitions() {
-    FOLDER="$1"
+    FOLDER="/$1"
     FOLDER_SED="\/$1"
     REQUIRED=$2
+    
     local BOOT_PARTITION="$(lsblk | sed -En "/.*?part\s*${FOLDER_SED}/p")"
     if [[ -z ${BOOT_PARTITION} ]]; then
         verbose_output "NOK" "${FOLDER} not in a separate partition"
+        _conformity "0"
     else
         verbose_output "OK" "${FOLDER} is in a separate partition"
+        _conformity "1"
     fi
 }
 
@@ -67,7 +74,9 @@ function separate_partitions() {
 
 function level_low() {
     # /home separate partition
+    separate_partitions 'boot' "yes"
     separate_partitions 'home' "yes"
+    separate_partitions 'usr' "yes"
 }
 
 ###
@@ -98,6 +107,8 @@ function main() {
         hard)
             ;;
     esac
+
+    echo "${CONFORMITY}/20"
 }
 
 
