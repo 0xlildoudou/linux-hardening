@@ -15,6 +15,15 @@ function banner() {
     echo "Based on : https://github.com/trimstray/linux-hardening-checklist"
 }
 
+function usage() {
+    echo "USAGE: ./hardening.sh [OPTIONS] -l [LEVELS]"
+    echo "LEVELS: 'empty';low;medium;hard"
+    echo "OPTIONS:"
+    echo "-l | --level      Select the hardening level"
+    echo "-v | --verbose    Verbose options"
+    
+}
+
 function requirements() {
     _packages_requirements=(sed awk wc lsblk)
 
@@ -190,8 +199,9 @@ while [ $# -gt 0 ]; do
             ;;
         -v|--verbose)
             VERBOSE="True"
-        ;;
+            ;;
         -h|--help)
+            usage
             ;;
     esac
     shift
