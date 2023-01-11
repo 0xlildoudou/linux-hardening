@@ -114,6 +114,18 @@ function restrict_mount_options() {
     fi
 }
 
+function disk_encrypted() {
+    local DISKS_ENCRYPTED=$(sed -En '/^\s*.*?UUID.*?/p' /etc/crypttab)
+    local DISKS_ENCRYPTED_NAME=$(echo ${DISKS_ENCRYPTED} | awk -F' ' '{print $1}')
+    if [[ -z ${DISKS_ENCRYPTED} ]]; then
+        verbose_output "NOK" "${DISKS_ENCRYPTED_NAME} is not encrypted"
+        _conformity "0"
+    else
+        verbose_output "OK" "${DISKS_ENCRYPTED_NAME} is encrypted"
+        _conformity "1"
+    fi
+}
+
 ###
 # LEVELS
 ###
@@ -131,6 +143,8 @@ function level_low() {
     restrict_mount_options "var/log/audit" "defaults nosuid noexec nodev"
     restrict_mount_options "proc" "defaults hidepid=2"
 
+    # Disk encrypted
+    disk_encrypted
 }
 
 ###
